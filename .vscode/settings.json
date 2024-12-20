@@ -1,0 +1,9 @@
+{
+   "editor.defaultFormatter": "Dart-Code.dart-code",
+   "editor.formatOnSave": true,
+   "java.configuration.updateBuildConfiguration": "interactive",
+   "java.project.sourcePaths": [
+      "my_rfid_plugin"
+   ],
+   "java.import.gradle.java.home": ""
+}
