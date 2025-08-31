@@ -70,7 +70,7 @@ class SplashScreen extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'OVEN RFID Reader',
+                    'RFID SOFTWARE',
                     style: TextStyle(color: Colors.white),
                   )
                 ],

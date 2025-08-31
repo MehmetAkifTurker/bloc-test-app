@@ -124,6 +124,7 @@
 // }
 import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:water_boiler_rfid_labeler/ui/router/app_bar.dart';
 
 class MainMenu extends StatefulWidget {
@@ -134,112 +135,184 @@ class MainMenu extends StatefulWidget {
 }
 
 class _MainMenuState extends State<MainMenu> {
-  // THY renkleri (yakın tonlar)
+  // Turkish Airlines brand colors
   static const Color _thyRed = Color(0xFFE31837);
   static const Color _thyNavy = Color(0xFF003B5C);
 
-  static const double _btnHeight = 80; // ↑ daha yüksek butonlar
-  static const double _gap = 28; // ↑ butonlar arası mesafe
-  static const double _radius = 18;
-
-  void _go(String route) => Navigator.pushNamed(context, route);
+  void _go(String route) {
+    HapticFeedback.selectionClick();
+    Navigator.pushNamed(context, route);
+  }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? const Color(0xFF0F1114) : const Color(0xFFF6F7F9);
+
     return PopScope(
-      canPop: false, // ana menüde geri ile kapanmasın
+      canPop: false, // main menüde geri ile uygulama kapanmasın
       onPopInvokedWithResult: (_, __) {},
       child: Scaffold(
         appBar: commonAppBar(context, 'Main Menu', showBack: false),
+        backgroundColor: bg,
         body: SafeArea(
           child: Center(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Başlık
-                  Text(
-                    'Tool ve Test Sistemleri RFID Yazılımı',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 28, // ↑ daha büyük yazı
-                      fontWeight: FontWeight.w800,
-                      height: 1.25,
-                      letterSpacing: .2,
-                      color: _thyNavy,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 520),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 28, 20, 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text(
+                      'Tool & Test Systems RFID\nSoftware',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 28,
+                        height: 1.25,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: .2,
+                        color: _thyNavy,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 36),
+                    const SizedBox(height: 10),
+                    Container(
+                      height: 4,
+                      margin: const EdgeInsets.symmetric(horizontal: 70),
+                      decoration: const BoxDecoration(
+                        borderRadius: BorderRadius.all(Radius.circular(4)),
+                        gradient: LinearGradient(
+                          colors: [_thyRed, _thyNavy],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 36),
 
-                  // TAG READER
-                  _menuButton(
-                    icon: Icons.qr_code_scanner,
-                    label: 'TAG READER',
-                    onTap: () => _go('/read'),
-                    navy: _thyNavy,
-                  ),
-                  const SizedBox(height: _gap),
+                    // TAG READER
+                    _BrandActionCard(
+                      icon: Icons.qr_code_scanner,
+                      title: 'TAG READER',
+                      subtitle: 'Scan and read RFID tags',
+                      accent: _thyNavy,
+                      onTap: () => _go('/read'),
+                    ),
+                    const SizedBox(height: 28),
 
-                  // TAG WRITER
-                  _menuButton(
-                    icon: Icons.edit,
-                    label: 'TAG WRITER',
-                    onTap: () => _go('/write'),
-                    navy: _thyNavy,
-                  ),
-                ],
+                    // TAG WRITER
+                    _BrandActionCard(
+                      icon: Icons.edit,
+                      title: 'TAG WRITER',
+                      subtitle: 'Write & configure RFID tags',
+                      accent: _thyNavy,
+                      onTap: () => _go('/write'),
+                    ),
+                    const SizedBox(height: 28),
+
+                    // NEW: QR CODE READER
+                    _BrandActionCard(
+                      icon: Icons.qr_code_2,
+                      title: 'QR CODE READER',
+                      subtitle: 'Scan QR codes',
+                      accent: _thyRed,
+                      onTap: () => _go('/qr'),
+                    ),
+
+                    const Spacer(),
+                    const Center(
+                      child: Text(
+                        '© Turkish Airlines Technic',
+                        style: TextStyle(fontSize: 12, color: Colors.black45),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
         ),
-        backgroundColor: const Color(0xFFF6F7F9), // hafif gri arka plan
       ),
     );
   }
+}
 
-  Widget _menuButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    required Color navy,
-  }) {
+class _BrandActionCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color accent;
+  final VoidCallback onTap;
+
+  const _BrandActionCard({
+    Key? key,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.accent,
+    required this.onTap,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final base = isDark ? const Color(0xFF161A1F) : Colors.white;
+
     return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(_radius),
-      elevation: 0,
+      color: base,
+      elevation: 4,
+      shadowColor: Colors.black.withOpacity(.08),
+      borderRadius: BorderRadius.circular(18),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(_radius),
+        borderRadius: BorderRadius.circular(18),
         child: Container(
-          height: _btnHeight,
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF2F7FA), // laciverte yakın açık ton
-            borderRadius: BorderRadius.circular(_radius),
-            border: Border.all(color: navy.withOpacity(.12), width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(.06),
-                blurRadius: 14,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
+          height: 88,
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: navy, size: 28),
-              const SizedBox(width: 14),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 20, // ↑ daha büyük yazı
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: .4,
-                  color: navy,
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: accent.withOpacity(.10),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: accent.withOpacity(.18)),
+                ),
+                child: Icon(icon, color: accent, size: 30),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: .3,
+                        color: accent,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        color: Colors.black.withOpacity(.55),
+                      ),
+                    ),
+                  ],
                 ),
               ),
+              const SizedBox(width: 8),
+              Icon(Icons.chevron_right, color: accent, size: 28),
             ],
           ),
         ),
