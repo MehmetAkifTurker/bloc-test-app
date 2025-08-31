@@ -1,10 +1,10 @@
 import 'dart:developer';
 
-import 'package:bloc_test_app/business_logic/blocs/db_tag/db_tag_event.dart';
-import 'package:bloc_test_app/business_logic/blocs/db_tag/db_tag_state.dart';
-import 'package:bloc_test_app/data/models/const.dart';
-import 'package:bloc_test_app/data/models/db_tag.dart';
-import 'package:bloc_test_app/data/repositories/rfid_tag_repository.dart';
+import 'package:water_boiler_rfid_labeler/business_logic/blocs/db_tag/db_tag_event.dart';
+import 'package:water_boiler_rfid_labeler/business_logic/blocs/db_tag/db_tag_state.dart';
+import 'package:water_boiler_rfid_labeler/data/models/const.dart';
+import 'package:water_boiler_rfid_labeler/data/models/db_tag.dart';
+import 'package:water_boiler_rfid_labeler/data/repositories/rfid_tag_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class DBTagBloc extends Bloc<DBTagEvent, DBTagState> {

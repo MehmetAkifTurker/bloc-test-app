@@ -1,4 +1,4 @@
-import 'package:bloc_test_app/data/models/variables.dart';
+import 'package:water_boiler_rfid_labeler/data/models/variables.dart';
 import 'package:flutter/material.dart';
 
 SizedBox commonDrawer(BuildContext context) {

@@ -1,6 +1,6 @@
 {
-    "name": "bloc_test_app",
-    "short_name": "bloc_test_app",
+    "name": "water_boiler_rfid_labeler",
+    "short_name": "water_boiler_rfid_labeler",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

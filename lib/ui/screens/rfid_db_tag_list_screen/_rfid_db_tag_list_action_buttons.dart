@@ -1,8 +1,8 @@
 // import 'dart:developer';
-// import 'package:bloc_test_app/business_logic/blocs/rfid_tag/rfid_tag_bloc.dart';
-// import 'package:bloc_test_app/business_logic/blocs/rfid_tag/rfid_tag_bloc.dart';
-// import 'package:bloc_test_app/data/models/tag_epc.dart';
-// import 'package:bloc_test_app/java_comm/rfid_c72_plugin.dart';
+// import 'package:water_boiler_rfid_labeler/business_logic/blocs/rfid_tag/rfid_tag_bloc.dart';
+// import 'package:water_boiler_rfid_labeler/business_logic/blocs/rfid_tag/rfid_tag_bloc.dart';
+// import 'package:water_boiler_rfid_labeler/data/models/tag_epc.dart';
+// import 'package:water_boiler_rfid_labeler/java_comm/rfid_c72_plugin.dart';
 // import 'package:flutter/material.dart';
 // import 'package:flutter_bloc/flutter_bloc.dart';
 

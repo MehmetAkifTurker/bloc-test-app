@@ -1,5 +1,5 @@
-import 'package:bloc_test_app/data/models/tag_epc.dart';
-import 'package:bloc_test_app/java_comm/rfid_c72_plugin.dart';
+import 'package:water_boiler_rfid_labeler/data/models/tag_epc.dart';
+import 'package:water_boiler_rfid_labeler/java_comm/rfid_c72_plugin.dart';
 import 'package:flutter/services.dart';
 
 class RfidScanner {
@@ -11,46 +11,52 @@ class RfidScanner {
   bool _isLoading = true;
   int _totalEPC = 0, _invalidEPC = 0, _scannedEPC = 0;
 
-  // Platform messages are asynchronous, so we initialize in an async method.
-  Future<void> initPlatformState() async {
-    String platformVersion;
-// Platform messages may fail, so we use a try/catch PlatformException.
-    try {
-      platformVersion = (await RfidC72Plugin.platformVersion)!;
-    } on PlatformException {
-      platformVersion = 'Failed to get platform version.';
-    }
-    RfidC72Plugin.connectedStatusStream
-        .receiveBroadcastStream()
-        .listen(updateIsConnected);
-    RfidC72Plugin.tagsStatusStream.receiveBroadcastStream().listen(updateTags);
-    await RfidC72Plugin.connect;
-// await UhfC72Plugin.setWorkArea('2');
-// await UhfC72Plugin.setPowerLevel('30');
-// If the widget was removed from the tree while the asynchronous platform
-// message was in flight, we want to discard the reply rather than calling
-// setState to update our non-existent appearance.
-
-    await RfidC72Plugin.connectBarcode; //connect barcode
-
-    _platformVersion = platformVersion;
-    _isLoading = false;
-  }
+  // RfidC72Plugin streams
+  // - connectedStatusStream -> calls updateIsConnected
+  // - tagsStatusStream -> calls updateTags
 
   List<TagEpc> _data = [];
   final List<String> _EPC = [];
-
-  void updateTags(dynamic result) async {
-    _data = TagEpc.parseTags(result);
-    _totalEPC = _data.toSet().toList().length;
-  }
-
-  void updateIsConnected(dynamic isConnected) {
-    _isConnected = isConnected;
-  }
 
   final bool _isContinuousCall = false;
   final bool _is2dscanCall = false;
 
   String get platformVersion => _platformVersion;
+
+  /// Asynchronously initialize the plugin data.
+  /// We do NOT call RfidC72Plugin.connect here anymore.
+  Future<void> initPlatformState() async {
+    String platformVersion;
+
+    try {
+      platformVersion = (await RfidC72Plugin.platformVersion) ?? 'Unknown';
+    } on PlatformException {
+      platformVersion = 'Failed to get platform version.';
+    }
+
+    // Subscribe to connected and tag streams
+    RfidC72Plugin.connectedStatusStream
+        .receiveBroadcastStream()
+        .listen(updateIsConnected);
+
+    RfidC72Plugin.tagsStatusStream.receiveBroadcastStream().listen(updateTags);
+
+    // If you want to connect to 2D barcode scanning here:
+    await RfidC72Plugin.connectBarcode; // If you need the 2D scanner
+    // (Remove it if you want to connect the scanner once at a higher level, too.)
+
+    _platformVersion = platformVersion;
+    _isLoading = false;
+  }
+
+  /// Called whenever the tagsStatusStream emits a new set of tags.
+  void updateTags(dynamic result) {
+    _data = TagEpc.parseTags(result);
+    _totalEPC = _data.toSet().length;
+  }
+
+  /// Called whenever the connectedStatusStream emits a bool for isConnected.
+  void updateIsConnected(dynamic isConnectedValue) {
+    _isConnected = (isConnectedValue == true);
+  }
 }

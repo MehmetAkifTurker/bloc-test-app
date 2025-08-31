@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'dart:developer';
+import 'dart:convert';
 
-import 'package:bloc_test_app/business_logic/blocs/box_check/box_check_bloc.dart';
-import 'package:bloc_test_app/business_logic/blocs/db_tag/db_tag_bloc.dart';
-import 'package:bloc_test_app/business_logic/blocs/db_tag/db_tag_state.dart';
-import 'package:bloc_test_app/business_logic/blocs/rfid_tag/rfid_tag_bloc.dart';
+import 'package:water_boiler_rfid_labeler/business_logic/blocs/box_check/box_check_bloc.dart';
+import 'package:water_boiler_rfid_labeler/business_logic/blocs/db_tag/db_tag_bloc.dart';
+import 'package:water_boiler_rfid_labeler/business_logic/blocs/db_tag/db_tag_state.dart';
+import 'package:water_boiler_rfid_labeler/business_logic/blocs/rfid_tag/rfid_tag_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -124,10 +125,19 @@ class RfidC72Plugin {
     return result;
   }
 
-  static Future<bool?> writeTag2(String value) async {
-    final result = await _channel
-        .invokeMethod('writeTag2', <String, String>{'value': value});
+  static Future<bool?> writeTagADIConstruct2(
+      String partNumber, String serialNumber) async {
+    final result =
+        await _channel.invokeMethod('writeTagADIConstruct2', <String, String>{
+      'partNumber': partNumber.toUpperCase(),
+      'serialNumber': serialNumber.toUpperCase()
+    });
     return result;
+  }
+
+  static Future<String?> readSingleTagEpc() async {
+    final String? epcHex = await _channel.invokeMethod('readSingleTagEpc');
+    return epcHex;
   }
 
   // Key Event Handling
@@ -136,41 +146,128 @@ class RfidC72Plugin {
         .setMethodCallHandler((call) => _handleKeyEvent(call, context));
   }
 
+  static const EventChannel locationStatusStream =
+      EventChannel('LocationStatus');
+
+  static Future<bool?> startLocation({
+    required String label,
+    required int bank,
+    required int ptr,
+  }) async {
+    final result = await _channel.invokeMethod('startLocation', {
+      'label': label,
+      'bank': bank,
+      'ptr': ptr,
+    });
+    return result;
+  }
+
+  static Future<bool?> stopLocation() async {
+    return await _channel.invokeMethod('stopLocation');
+  }
+
   static Future<void> _handleKeyEvent(
       MethodCall call, BuildContext context) async {
-    log('Handle key event OK');
-
+    log('Handle trigger event');
     final dbState = context.read<DBTagBloc>().state;
     final pageIndex = context.read<NavigationCubit>().state;
-    log(pageIndex.toString());
-    log(globalDataToWriteTag);
     switch (call.method) {
       case 'onKeyDown':
         int keyCode = call.arguments;
-        log('Key down: $keyCode');
-        if (dbState is DBTagLoaded) {
-          if (pageIndex == 1) {
-            context.read<BoxCheckBloc>().add(BoxCheckStart(dbState.tags));
-            Timer(const Duration(seconds: 5), () {
-              context.read<BoxCheckBloc>().add(BoxCheckStop());
-            });
-          } else if (pageIndex == 2) {
-            context.read<RfidTagBloc>().add(RfidScanStart(dbState.tags));
-            Timer(const Duration(seconds: 5), () {
-              context.read<RfidTagBloc>().add(RfidScanStop());
-            });
-          } else if (pageIndex == 4) {
-            await writeTag2(globalDataToWriteTag);
-          }
+        log('Trigger pressed: $keyCode');
+        // When trigger is pressed, start scanning (for page index 1, i.e., Box Check)
+        if (dbState is DBTagLoaded && pageIndex == 1) {
+          // Dispatch the start scanning event – ensure your BoxCheckBloc listens for this
+          context.read<BoxCheckBloc>().add(BoxCheckStart(dbState.tags));
         }
         break;
       case 'onKeyUp':
         int keyCode = call.arguments;
-        log('Key up: $keyCode');
-
+        log('Trigger released: $keyCode');
+        // When trigger is released, stop scanning
+        if (dbState is DBTagLoaded && pageIndex == 1) {
+          context.read<BoxCheckBloc>().add(BoxCheckStop());
+        }
         break;
       default:
         throw MissingPluginException('Not implemented: ${call.method}');
     }
+  }
+
+  static Future<bool?> writeAtaUserMemoryWithPayload(
+    String manufacturer,
+    String productName,
+    String partNumber,
+    String serialNumber,
+    String manufactureDate,
+  ) {
+    return _channel.invokeMethod<bool>('writeAtaUserMemoryWithPayload', {
+      'manufacturer': manufacturer,
+      'productName': productName, // boş string yollanabilir
+      'partNumber': partNumber,
+      'serialNumber': serialNumber,
+      'manufactureDate': manufactureDate,
+    });
+  }
+
+  static Future<bool?> programConstruct2Epc({
+    required String partNumber,
+    required String serialNumber,
+    required String manager, // 6 char (ör: ' TG424')
+    String accessPwd = '00000000',
+    required int filter, // 0..63
+  }) {
+    return _channel.invokeMethod<bool>('programConstruct2Epc', {
+      'partNumber': partNumber,
+      'serialNumber': serialNumber,
+      'manager': manager,
+      'accessPwd': accessPwd,
+      'filter': filter,
+    });
+  }
+
+  static Future<bool?> configureChipAta({
+    required String recordType, // 'DRT', 'SRT-B', 'SRT-U', 'MRT' vb.
+    required int epcWords,
+    required int userWords,
+    required int permalockWords,
+    required bool enablePermalock,
+    required bool lockEpc,
+    required bool lockUser,
+    String accessPwd = '00000000',
+  }) {
+    return _channel.invokeMethod<bool>('configureChipAta', {
+      'recordType': recordType,
+      'epcWords': epcWords,
+      'userWords': userWords,
+      'permalockWords': permalockWords,
+      'enablePermalock': enablePermalock,
+      'lockEpc': lockEpc,
+      'lockUser': lockUser,
+      'accessPwd': accessPwd,
+    });
+  }
+
+  static Future<String?> readUserMemory() async {
+    // (You might not need epcHex, but keep it for now for future filtering)
+    return await _channel.invokeMethod('readUserMemory');
+  }
+
+  static Future<String?> readUserMemoryForEpc(String epcHex) async {
+    return _channel.invokeMethod('readUserMemoryForEpc', {'epc': epcHex});
+  }
+
+  static Future<List<Map<String, dynamic>>> getCurrentTags() async {
+    final String json = await _channel.invokeMethod('getCurrentTags');
+    final List<dynamic> list = jsonDecode(json);
+    return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
+  static Future<Map<String, dynamic>?> readUserFieldsForEpc(
+      String epcHex) async {
+    final String json =
+        await _channel.invokeMethod('readUserFieldsForEpc', {'epc': epcHex});
+    if (json.isEmpty) return null;
+    return Map<String, dynamic>.from(jsonDecode(json));
   }
 }

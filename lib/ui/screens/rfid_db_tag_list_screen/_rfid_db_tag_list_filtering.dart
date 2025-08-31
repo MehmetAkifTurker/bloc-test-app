@@ -1,9 +1,9 @@
 import 'dart:developer';
-import 'package:bloc_test_app/business_logic/blocs/db_filtering_bloc/bloc/db_filtering_bloc.dart';
-import 'package:bloc_test_app/business_logic/blocs/db_tag/db_tag_bloc.dart';
-import 'package:bloc_test_app/business_logic/blocs/db_tag/db_tag_event.dart';
-import 'package:bloc_test_app/business_logic/blocs/db_tag/db_tag_state.dart';
-import 'package:bloc_test_app/data/models/const.dart';
+import 'package:water_boiler_rfid_labeler/business_logic/blocs/db_filtering_bloc/bloc/db_filtering_bloc.dart';
+import 'package:water_boiler_rfid_labeler/business_logic/blocs/db_tag/db_tag_bloc.dart';
+import 'package:water_boiler_rfid_labeler/business_logic/blocs/db_tag/db_tag_event.dart';
+import 'package:water_boiler_rfid_labeler/business_logic/blocs/db_tag/db_tag_state.dart';
+import 'package:water_boiler_rfid_labeler/data/models/const.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
