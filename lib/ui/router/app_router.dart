@@ -1,7 +1,5 @@
 import 'package:water_boiler_rfid_labeler/ui/screens/box_check_scan_screen/box_check_scan_screen.dart';
 import 'package:water_boiler_rfid_labeler/ui/screens/main_menu/main_menu.dart';
-import 'package:water_boiler_rfid_labeler/ui/screens/rfid_db_tag_list_screen/rfid_tag_list_screen.dart';
-import 'package:water_boiler_rfid_labeler/ui/screens/rfid_scan_tag_list_screen/rfid_scan_tag_list_screen.dart';
 import 'package:flutter/material.dart';
 
 import '../screens/tag_write_screen/tag_write_screen.dart';

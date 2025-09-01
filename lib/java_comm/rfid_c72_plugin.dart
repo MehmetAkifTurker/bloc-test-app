@@ -2,16 +2,9 @@ import 'dart:async';
 import 'dart:developer';
 import 'dart:convert';
 
-import 'package:water_boiler_rfid_labeler/business_logic/blocs/box_check/box_check_bloc.dart';
-import 'package:water_boiler_rfid_labeler/business_logic/blocs/db_tag/db_tag_bloc.dart';
-import 'package:water_boiler_rfid_labeler/business_logic/blocs/db_tag/db_tag_state.dart';
-import 'package:water_boiler_rfid_labeler/business_logic/blocs/rfid_tag/rfid_tag_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
-import '../business_logic/cubit/navigaion_qubit_cubit.dart';
-import '../data/models/variables.dart';
 
 class RfidC72Plugin {
   static const MethodChannel _channel = MethodChannel('rfid_c72_plugin');
@@ -169,25 +162,24 @@ class RfidC72Plugin {
   static Future<void> _handleKeyEvent(
       MethodCall call, BuildContext context) async {
     log('Handle trigger event');
-    final dbState = context.read<DBTagBloc>().state;
-    final pageIndex = context.read<NavigationCubit>().state;
+    // final dbState = context.read<DBTagBloc>().state;
     switch (call.method) {
       case 'onKeyDown':
         int keyCode = call.arguments;
         log('Trigger pressed: $keyCode');
         // When trigger is pressed, start scanning (for page index 1, i.e., Box Check)
-        if (dbState is DBTagLoaded && pageIndex == 1) {
-          // Dispatch the start scanning event – ensure your BoxCheckBloc listens for this
-          context.read<BoxCheckBloc>().add(BoxCheckStart(dbState.tags));
-        }
+        // if (dbState is DBTagLoaded && pageIndex == 1) {
+        //   // Dispatch the start scanning event – ensure your BoxCheckBloc listens for this
+        //   context.read<BoxCheckBloc>().add(BoxCheckStart(dbState.tags));
+        // }
         break;
       case 'onKeyUp':
         int keyCode = call.arguments;
         log('Trigger released: $keyCode');
         // When trigger is released, stop scanning
-        if (dbState is DBTagLoaded && pageIndex == 1) {
-          context.read<BoxCheckBloc>().add(BoxCheckStop());
-        }
+        // if (dbState is DBTagLoaded && pageIndex == 1) {
+        //   context.read<BoxCheckBloc>().add(BoxCheckStop());
+        // }
         break;
       default:
         throw MissingPluginException('Not implemented: ${call.method}');
