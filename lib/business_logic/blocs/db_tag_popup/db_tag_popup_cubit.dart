@@ -1,5 +1,5 @@
 import 'package:bloc/bloc.dart';
-import 'package:bloc_test_app/data/models/const.dart';
+import 'package:water_boiler_rfid_labeler/data/models/const.dart';
 import 'package:equatable/equatable.dart';
 
 part 'db_tag_popup_state.dart';

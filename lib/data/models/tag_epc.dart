@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:bloc_test_app/data/models/db_tag.dart';
+import 'package:water_boiler_rfid_labeler/data/models/db_tag.dart';
 import 'package:equatable/equatable.dart';
 
 class TagEpc extends Equatable {

@@ -1,11 +1,11 @@
 import 'dart:developer';
-import 'package:bloc_test_app/business_logic/blocs/db_tag/db_tag_bloc.dart';
-import 'package:bloc_test_app/business_logic/blocs/db_tag/db_tag_state.dart';
-import 'package:bloc_test_app/data/models/db_tag.dart';
-import 'package:bloc_test_app/ui/router/app_bar.dart';
-import 'package:bloc_test_app/ui/router/bottom_navigation.dart';
-import 'package:bloc_test_app/ui/screens/rfid_db_tag_list_screen/_rfid_db_tag_list_filtering.dart';
-import 'package:bloc_test_app/ui/widgets/list_builder.dart';
+import 'package:water_boiler_rfid_labeler/business_logic/blocs/db_tag/db_tag_bloc.dart';
+import 'package:water_boiler_rfid_labeler/business_logic/blocs/db_tag/db_tag_state.dart';
+import 'package:water_boiler_rfid_labeler/data/models/db_tag.dart';
+import 'package:water_boiler_rfid_labeler/ui/router/app_bar.dart';
+import 'package:water_boiler_rfid_labeler/ui/router/bottom_navigation.dart';
+import 'package:water_boiler_rfid_labeler/ui/screens/rfid_db_tag_list_screen/_rfid_db_tag_list_filtering.dart';
+import 'package:water_boiler_rfid_labeler/ui/widgets/list_builder.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 

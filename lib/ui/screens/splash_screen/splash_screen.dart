@@ -1,4 +1,4 @@
-import 'package:bloc_test_app/data/models/variables.dart';
+import 'package:water_boiler_rfid_labeler/data/models/variables.dart';
 import 'package:flutter/material.dart';
 
 class SplashScreen extends StatelessWidget {
@@ -70,7 +70,7 @@ class SplashScreen extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    'Bootstrap RFID Reader',
+                    'OVEN RFID Reader',
                     style: TextStyle(color: Colors.white),
                   )
                 ],

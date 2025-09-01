@@ -1,4 +1,4 @@
-package com.example.bloc_test_app;
+package com.example.water_boiler_rfid_labeler;
 
 // import android.content.Context;
 // import android.os.Handler;
@@ -19,13 +19,13 @@ package com.example.bloc_test_app;
 //         Log.e(TAG, "Button down " + keyCode);
 //         return super.onKeyDown(keyCode, event);
 //     }
-    
+
 //     @Override
 //     public boolean onKeyUp(int keyCode, KeyEvent event) {
 //         Log.e(TAG, "Button up" + keyCode);
 //         return super.onKeyUp(keyCode, event);
 //     }
-    
+
 // }
 
 import android.os.Bundle;
@@ -41,23 +41,24 @@ public class MainActivity extends FlutterActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         new MethodChannel(getFlutterEngine().getDartExecutor().getBinaryMessenger(), CHANNEL).setMethodCallHandler(
-            (call, result) -> {
-                // Handle method calls from Flutter if needed
-            }
-        );
+                (call, result) -> {
+                    // Handle method calls from Flutter if needed
+                });
     }
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         Log.d("MainActivity", "Key down: " + keyCode);
-        new MethodChannel(getFlutterEngine().getDartExecutor().getBinaryMessenger(), CHANNEL).invokeMethod("onKeyDown", keyCode);
+        new MethodChannel(getFlutterEngine().getDartExecutor().getBinaryMessenger(), CHANNEL).invokeMethod("onKeyDown",
+                keyCode);
         return super.onKeyDown(keyCode, event);
     }
 
     @Override
     public boolean onKeyUp(int keyCode, KeyEvent event) {
         Log.d("MainActivity", "Key up: " + keyCode);
-        new MethodChannel(getFlutterEngine().getDartExecutor().getBinaryMessenger(), CHANNEL).invokeMethod("onKeyUp", keyCode);
+        new MethodChannel(getFlutterEngine().getDartExecutor().getBinaryMessenger(), CHANNEL).invokeMethod("onKeyUp",
+                keyCode);
         return super.onKeyUp(keyCode, event);
     }
 }

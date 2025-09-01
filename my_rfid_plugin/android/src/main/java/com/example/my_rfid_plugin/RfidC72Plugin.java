@@ -2,7 +2,6 @@ package com.example.my_rfid_plugin;
 
 import android.content.Context;
 
-
 import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.annotations.NonNull;
@@ -18,257 +17,347 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 import io.flutter.plugin.common.PluginRegistry.Registrar;
 
-
-/**
- * RfidC72Plugin
- */
 public class RfidC72Plugin implements FlutterPlugin, MethodCallHandler {
-  private static final String CHANNEL_IsStarted = "isStarted";
-  private static final String CHANNEL_StartSingle = "startSingle";
-  private static final String CHANNEL_StartContinuous = "startContinuous";
-  private static final String CHANNEL_StartContinuous2 = "startContinuous2";
-  private static final String CHANNEL_Stop = "stop";
-  private static final String CHANNEL_ClearData = "clearData";
-  private static final String CHANNEL_IsEmptyTags = "isEmptyTags";
-  private static final String CHANNEL_Close = "close";
-  private static final String CHANNEL_Connect = "connect";
-  private static final String CHANNEL_IsConnected = "isConnected";
-  private static final String CHANNEL_SETPOWERLEVEL = "setPowerLevel";
-  private static final String CHANNEL_SETWORKAREA = "setWorkArea";
-  private static final String CHANNEL_ConnectedStatus = "ConnectedStatus";
-  private static final String CHANNEL_TagsStatus = "TagsStatus";
-  private static final String CHANNEL_CONNECT_BARCODE = "connectBarcode";
-  private static final String CHANNEL_SCAN_BARCODE = "scanBarcode";
-  private static final String CHANNEL_STOP_SCAN_BARCODE = "stopScan";
-  private static final String CHANNEL_READ_BARCODE = "readBarcode";
-  private static final String CHANNEL_CLOSE_SCAN_BARCODE= "closeScan";
-  private static final String CHANNEL_PLAY_SOUND= "playSound";
-  private static final String CHANNEL_GET_POWER_LEVEL= "getPowerLevel";
-  private static final String CHANNEL_GET_FREQ_MODE= "getFrequencyMode";
-  private static final String CHANNEL_GET_TEMPERATURE= "getTemperature";
-  private static final String CHANNEL_WRITE_TAG= "writeTag";
-  private static final String CHANNEL_WRITE_TAG2= "writeTag2";
-  private static PublishSubject<Boolean> connectedStatus = PublishSubject.create();
-  private static PublishSubject<String> tagsStatus = PublishSubject.create();
-  
-  // This static function is optional and equivalent to onAttachedToEngine. It supports the old
-  // pre-Flutter-1.12 Android projects. You are encouraged to continue supporting
-  // plugin registration via this function while apps migrate to use the new Android APIs
-  // post-flutter-1.12 via https://flutter.dev/go/android-project-migration.
-  //
-  // It is encouraged to share logic between onAttachedToEngine and registerWith to keep
-  // them functionally equivalent. Only one of onAttachedToEngine or registerWith will be called
-  // depending on the user's project. onAttachedToEngine or registerWith must both be defined
-  // in the same class.
-  public static void registerWith(Registrar registrar) {
-    final MethodChannel channel = new MethodChannel(registrar.messenger(), "rfid_c72_plugin");
-    initConnectedEvent(registrar.messenger());
-    initReadEvent(registrar.messenger());
-    channel.setMethodCallHandler(new RfidC72Plugin());
 
-    UHFHelper.getInstance().init(registrar.context());
-    UHFHelper.getInstance().setUhfListener(new UHFListener() {
-      @Override
-      public void onRead(String tagsJson) {
-        if (tagsJson != null)
-          tagsStatus.onNext(tagsJson);
-      }
+    private static Context appContext;
 
-      @Override
-      public void onConnect(boolean isConnected, int powerLevel) {
-        connectedStatus.onNext(isConnected);
-      }
-    });
-  }
+    private static final String CHANNEL_WRITE_TAG2 = "writeTagADIConstruct2";
+    private static PublishSubject<Boolean> connectedStatus = PublishSubject.create();
+    private static PublishSubject<String> tagsStatus = PublishSubject.create();
 
-  @Override
-  public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
-    final MethodChannel channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "rfid_c72_plugin");
-    initConnectedEvent(flutterPluginBinding.getBinaryMessenger());
-    initReadEvent(flutterPluginBinding.getBinaryMessenger());
-    Context applicationContext = flutterPluginBinding.getApplicationContext();
-    channel.setMethodCallHandler(new RfidC72Plugin());
-    UHFHelper.getInstance().init(applicationContext);
-    UHFHelper.getInstance().setUhfListener(new UHFListener() {
-      @Override
-      public void onRead(String tagsJson) {
-        if (tagsJson != null)
-          tagsStatus.onNext(tagsJson);
-      }
+    // For Flutter versions <= 1.12
+    public static void registerWith(Registrar registrar) {
+        final MethodChannel channel = new MethodChannel(registrar.messenger(), "rfid_c72_plugin");
+        initConnectedEvent(registrar.messenger());
+        initReadEvent(registrar.messenger());
+        channel.setMethodCallHandler(new RfidC72Plugin());
 
-      @Override
-      public void onConnect(boolean isConnected, int powerLevel) {
-        connectedStatus.onNext(isConnected);
-      }
-    });
-  }
+        UHFHelper.getInstance().init(registrar.context());
+        UHFHelper.getInstance().setUhfListener(new UHFListener() {
+            @Override
+            public void onRead(String tagsJson) {
+                // Optionally forward tag data
+            }
 
-
-  private static void initConnectedEvent(BinaryMessenger messenger) {
-    final EventChannel scannerEventChannel = new EventChannel(messenger, CHANNEL_ConnectedStatus);
-    scannerEventChannel.setStreamHandler(new EventChannel.StreamHandler() {
-      @Override
-      public void onListen(Object o, final EventChannel.EventSink eventSink) {
-        connectedStatus
-                .subscribeOn(Schedulers.newThread())
-                .observeOn(AndroidSchedulers.mainThread()).subscribe(new Observer<Boolean>() {
-                  @Override
-                  public void onSubscribe(Disposable d) {
-
-                  }
-
-                  @Override
-                  public void onNext(Boolean isConnected) {
-                    eventSink.success(isConnected);
-                  }
-
-                  @Override
-                  public void onError(Throwable e) {
-
-                  }
-
-                  @Override
-                  public void onComplete() {
-
-                  }
-                });
-      }
-
-      @Override
-      public void onCancel(Object o) {
-
-      }
-    });
-  }
-
-  private static void initReadEvent(BinaryMessenger messenger) {
-    final EventChannel scannerEventChannel = new EventChannel(messenger, CHANNEL_TagsStatus);
-    scannerEventChannel.setStreamHandler(new EventChannel.StreamHandler() {
-      @Override
-      public void onListen(Object o, final EventChannel.EventSink eventSink) {
-        tagsStatus
-                .subscribeOn(Schedulers.newThread())
-                .observeOn(AndroidSchedulers.mainThread()).subscribe(new Observer<String>() {
-                  @Override
-                  public void onSubscribe(Disposable d) {
-
-                  }
-
-                  @Override
-                  public void onNext(String tag) {
-                    eventSink.success(tag);
-                  }
-
-                  @Override
-                  public void onError(Throwable e) {
-
-                  }
-
-                  @Override
-                  public void onComplete() {
-
-                  }
-                });
-      }
-
-      @Override
-      public void onCancel(Object o) {
-
-      }
-    });
-  }
-
-
-  @Override
-  public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
-    handleMethods(call, result);
-  }
-
-  
-  private void handleMethods(MethodCall call, Result result) {
-    switch (call.method) {
-      case "getPlatformVersion":
-        result.success("Android " + android.os.Build.VERSION.RELEASE);
-        break;
-      case CHANNEL_IsStarted:
-        result.success(UHFHelper.getInstance().isStarted());
-        break;
-      case CHANNEL_StartSingle:
-        result.success(UHFHelper.getInstance().start(true));
-        break;
-      case CHANNEL_StartContinuous:
-        result.success(UHFHelper.getInstance().start(false));
-        break;
-      case CHANNEL_StartContinuous2:
-        result.success(UHFHelper.getInstance().start(false));
-        break;
-      case CHANNEL_Stop:
-        result.success(UHFHelper.getInstance().stop());
-        break;
-      case CHANNEL_ClearData:
-        UHFHelper.getInstance().clearData();
-        result.success(true);
-        break;
-      case CHANNEL_IsEmptyTags:
-        result.success(UHFHelper.getInstance().isEmptyTags());
-        break;
-      case CHANNEL_Close:
-        UHFHelper.getInstance().close();
-        result.success(true);
-        break;
-      case CHANNEL_Connect:
-        result.success(UHFHelper.getInstance().connect());
-        break;
-      case CHANNEL_IsConnected:
-        result.success(UHFHelper.getInstance().isConnected());
-        break;
-      case CHANNEL_SETPOWERLEVEL:
-        String powerLevel = call.argument("value");
-        result.success(UHFHelper.getInstance().setPowerLevel(powerLevel));
-        break;
-      case CHANNEL_SETWORKAREA:
-        String workArea = call.argument("value");
-        result.success(UHFHelper.getInstance().setWorkArea(workArea));
-        break;
-      case CHANNEL_CONNECT_BARCODE:
-        result.success(UHFHelper.getInstance().connectBarcode());
-        break;
-      case CHANNEL_SCAN_BARCODE:
-        result.success(UHFHelper.getInstance().scanBarcode());
-        break;
-      case CHANNEL_STOP_SCAN_BARCODE:
-        result.success(UHFHelper.getInstance().stopScan());
-        break;
-      case CHANNEL_CLOSE_SCAN_BARCODE:
-        result.success(UHFHelper.getInstance().closeScan());
-        break;
-      case CHANNEL_READ_BARCODE:
-        result.success(UHFHelper.getInstance().readBarcode());
-        break;
-      case CHANNEL_PLAY_SOUND:
-        result.success(UHFHelper.getInstance().playSound());
-        break;
-      case CHANNEL_GET_POWER_LEVEL:
-        result.success(UHFHelper.getInstance().getPowerLevel());
-        break;
-      case CHANNEL_GET_FREQ_MODE:
-        result.success(UHFHelper.getInstance().getFrequencyMode());
-        break;
-      case CHANNEL_GET_TEMPERATURE:
-        result.success(UHFHelper.getInstance().getTemperature());
-        break;
-      case CHANNEL_WRITE_TAG2:
-        String data = call.argument("value");
-        result.success(UHFHelper.getInstance().writeTag2(data));
-        break;
-      default:
-        result.notImplemented();
+            @Override
+            public void onConnect(boolean isConnected, int powerLevel) {
+                connectedStatus.onNext(isConnected);
+            }
+        });
     }
-  }
 
-  @Override
-  public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
-  }
+    @Override
+    public void onAttachedToEngine(@NonNull FlutterPluginBinding binding) {
+        final MethodChannel channel = new MethodChannel(binding.getBinaryMessenger(), "rfid_c72_plugin");
+        final EventChannel locationChannel = new EventChannel(binding.getBinaryMessenger(), "LocationStatus");
+        locationChannel.setStreamHandler(new EventChannel.StreamHandler() {
+            @Override
+            public void onListen(Object arguments, EventChannel.EventSink events) {
+                UHFHelper.setLocationSink(events); // <-- set sink
+            }
 
+            @Override
+            public void onCancel(Object arguments) {
+                UHFHelper.setLocationSink(null);
+            }
+        });
+        initConnectedEvent(binding.getBinaryMessenger());
+        initReadEvent(binding.getBinaryMessenger());
+        channel.setMethodCallHandler(new RfidC72Plugin());
+        appContext = binding.getApplicationContext();
+        UHFHelper.getInstance().init(appContext);
 
+        Context applicationContext = binding.getApplicationContext();
+        UHFHelper.getInstance().init(applicationContext);
+        UHFHelper.getInstance().setUhfListener(new UHFListener() {
+            @Override
+            public void onRead(String tagsJson) {
+                // Optionally forward tag data
+            }
+
+            @Override
+            public void onConnect(boolean isConnected, int powerLevel) {
+                connectedStatus.onNext(isConnected);
+            }
+        });
+    }
+
+    private static void initConnectedEvent(BinaryMessenger messenger) {
+        final EventChannel connectedChannel = new EventChannel(messenger, "ConnectedStatus");
+        connectedChannel.setStreamHandler(new EventChannel.StreamHandler() {
+            @Override
+            public void onListen(Object arguments, final EventChannel.EventSink eventSink) {
+                connectedStatus
+                        .subscribeOn(Schedulers.newThread())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(new Observer<Boolean>() {
+                            @Override
+                            public void onSubscribe(@NonNull Disposable d) {
+                            }
+
+                            @Override
+                            public void onNext(@NonNull Boolean isConnected) {
+                                eventSink.success(isConnected);
+                            }
+
+                            @Override
+                            public void onError(@NonNull Throwable e) {
+                            }
+
+                            @Override
+                            public void onComplete() {
+                            }
+                        });
+            }
+
+            @Override
+            public void onCancel(Object arguments) {
+            }
+        });
+    }
+
+    private static void initReadEvent(BinaryMessenger messenger) {
+        final EventChannel readChannel = new EventChannel(messenger, "TagsStatus");
+        readChannel.setStreamHandler(new EventChannel.StreamHandler() {
+            @Override
+            public void onListen(Object arguments, final EventChannel.EventSink eventSink) {
+                tagsStatus
+                        .subscribeOn(Schedulers.newThread())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(new Observer<String>() {
+                            @Override
+                            public void onSubscribe(@NonNull Disposable d) {
+                            }
+
+                            @Override
+                            public void onNext(@NonNull String tagJson) {
+                                eventSink.success(tagJson);
+                            }
+
+                            @Override
+                            public void onError(@NonNull Throwable e) {
+                            }
+
+                            @Override
+                            public void onComplete() {
+                            }
+                        });
+            }
+
+            @Override
+            public void onCancel(Object arguments) {
+            }
+        });
+    }
+
+    @Override
+    public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
+        handleMethods(call, result);
+    }
+
+    private void handleMethods(MethodCall call, Result result) {
+        switch (call.method) {
+            case "getPlatformVersion":
+                result.success("Android " + android.os.Build.VERSION.RELEASE);
+                break;
+            case "isStarted":
+                result.success(UHFHelper.getInstance().isStarted());
+                break;
+            case "startSingle":
+                result.success(UHFHelper.getInstance().start(true));
+                break;
+            case "startContinuous":
+            case "startContinuous2":
+                result.success(UHFHelper.getInstance().start(false));
+                break;
+            case "stop":
+                result.success(UHFHelper.getInstance().stop());
+                break;
+            case "clearData":
+                UHFHelper.getInstance().clearData();
+                result.success(true);
+                break;
+            case "isEmptyTags":
+                result.success(UHFHelper.getInstance().isEmptyTags());
+                break;
+            case "close":
+                UHFHelper.getInstance().close();
+                result.success(true);
+                break;
+            case "connect":
+                result.success(UHFHelper.getInstance().connect());
+                break;
+            case "isConnected":
+                result.success(UHFHelper.getInstance().isConnected());
+                break;
+            case "setPowerLevel":
+                String pwr = call.argument("value");
+                result.success(UHFHelper.getInstance().setPowerLevel(pwr));
+                break;
+            case "setWorkArea":
+                String wa = call.argument("value");
+                result.success(UHFHelper.getInstance().setWorkArea(wa));
+                break;
+            case "connectBarcode":
+                result.success(UHFHelper.getInstance().connectBarcode());
+                break;
+            case "scanBarcode":
+                result.success(UHFHelper.getInstance().scanBarcode());
+                break;
+            case "stopScan":
+                result.success(UHFHelper.getInstance().stopScan());
+                break;
+            case "closeScan":
+                result.success(UHFHelper.getInstance().closeScan());
+                break;
+            case "readBarcode":
+                result.success(UHFHelper.getInstance().readBarcode());
+                break;
+            case "playSound":
+                result.success(UHFHelper.getInstance().playSound());
+                break;
+            case "getPowerLevel":
+                result.success(UHFHelper.getInstance().getPowerLevel());
+                break;
+            case "getFrequencyMode":
+                result.success(UHFHelper.getInstance().getFrequencyMode());
+                break;
+            case "getTemperature":
+                result.success(UHFHelper.getInstance().getTemperature());
+                break;
+            case CHANNEL_WRITE_TAG2: {
+                String partNumber = call.argument("partNumber");
+                String serialNumber = call.argument("serialNumber");
+                if (partNumber != null && serialNumber != null) {
+                    boolean ok = UHFHelper.getInstance().writeTagADIConstruct2(
+                            partNumber.toUpperCase(),
+                            serialNumber.toUpperCase());
+                    result.success(ok);
+                } else {
+                    result.error("INVALID_ARGUMENTS", "Part Number and Serial Number required", null);
+                }
+                break;
+            }
+            // case "programConstruct2Epc": {
+            // String pn = call.argument("partNumber");
+            // String sn = call.argument("serialNumber");
+            // String manager6 = call.argument("manager6");
+            // String accessPwd = call.argument("accessPwd");
+            // boolean ok = UHFHelper.getInstance().programConstruct2Epc(
+            // pn.toUpperCase(), sn.toUpperCase(), manager6, accessPwd);
+            // result.success(ok);
+            // break;
+            // }
+            case "programConstruct2Epc": {
+                String partNumber = call.argument("partNumber");
+                String serialNumber = call.argument("serialNumber");
+                String manager = call.argument("manager");
+                String accessPwd = call.argument("accessPwd");
+                Integer filter = call.argument("filter");
+
+                boolean ok = UHFHelper.getInstance().programConstruct2Epc(
+                        partNumber != null ? partNumber : "",
+                        serialNumber != null ? serialNumber : "",
+                        manager != null ? manager : " TG424",
+                        accessPwd != null ? accessPwd : "00000000",
+                        filter != null ? filter : 0);
+                result.success(ok);
+                break;
+            }
+
+            case "readSingleTagEpc": {
+                String epc = UHFHelper.getInstance().readSingleTagEPC();
+                result.success(epc);
+                break;
+            }
+
+            case "writeAtaUserMemoryWithPayload": {
+                String manufacturer = call.argument("manufacturer");
+                String productName = call.argument("productName"); // null olabilir
+                String partNumber = call.argument("partNumber");
+                String serialNumber = call.argument("serialNumber");
+                String manufactureDate = call.argument("manufactureDate");
+
+                boolean ok = UHFHelper.getInstance().writeAtaUserMemoryWithPayload(
+                        manufacturer != null ? manufacturer : "",
+                        productName != null ? productName : "",
+                        partNumber != null ? partNumber : "",
+                        serialNumber != null ? serialNumber : "",
+                        manufactureDate != null ? manufactureDate : "");
+                result.success(ok);
+                break;
+            }
+
+            case "readUserMemory": {
+                String userMemory = UHFHelper.getInstance().readUserMemory();
+                result.success(userMemory);
+                break;
+            }
+
+            case "readUserMemoryForEpc": {
+                String epc = call.argument("epc");
+                String userMemory = UHFHelper.getInstance().readUserMemoryForEpc(epc);
+                result.success(userMemory);
+                break;
+            }
+
+            case "startLocation": {
+                String label = call.argument("label");
+                int bank = call.argument("bank");
+                int ptr = call.argument("ptr");
+
+                boolean ok = UHFHelper.getInstance().startLocation(appContext, label, bank, ptr);
+                result.success(ok);
+                break;
+            }
+            case "stopLocation":
+                boolean stopped = UHFHelper.getInstance().stopLocation();
+                result.success(stopped);
+                break;
+
+            case "configureChipAta": {
+                String recordType = call.argument("recordType");
+                Integer epcWords = call.argument("epcWords");
+                Integer userWords = call.argument("userWords");
+                Integer permalockWords = call.argument("permalockWords");
+                Boolean enablePermalock = call.argument("enablePermalock");
+                Boolean lockEpc = call.argument("lockEpc");
+                Boolean lockUser = call.argument("lockUser");
+                String accessPwd = call.argument("accessPwd");
+
+                boolean ok = UHFHelper.getInstance().prepareAtaChip(
+                        recordType,
+                        epcWords != null ? epcWords : 12,
+                        userWords != null ? userWords : 0,
+                        permalockWords != null ? permalockWords : 0,
+                        enablePermalock != null && enablePermalock,
+                        lockEpc != null && lockEpc,
+                        lockUser != null && lockUser,
+                        accessPwd != null ? accessPwd : "00000000");
+                result.success(ok);
+                break;
+            }
+            case "getCurrentTags": {
+                String json = UHFHelper.getInstance().getCurrentTagsJson();
+                result.success(json);
+                break;
+            }
+            case "readUserFieldsForEpc": {
+                String epc = call.argument("epc");
+                String json = UHFHelper.getInstance().readUserFieldsForEpc(epc);
+                result.success(json);
+                break;
+            }
+
+            default:
+                result.notImplemented();
+                break;
+
+        }
+    }
+
+    @Override
+    public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
+        // no-op
+    }
 }

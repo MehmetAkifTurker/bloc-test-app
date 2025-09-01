@@ -5,5 +5,9 @@
    "java.project.sourcePaths": [
       "my_rfid_plugin"
    ],
-   "java.import.gradle.java.home": ""
+   "java.import.gradle.java.home": "",
+   "cmake.sourceDirectory": "C:/Users/A_TURKER/Desktop/water_boiler_rfid_labeler/linux",
+   "[java]": {
+      "editor.defaultFormatter": "redhat.java"
+   }
 }
