@@ -46,6 +46,46 @@ class RfidC72Plugin {
     return _channel.invokeMethod('isStarted');
   }
 
+  static Completer<bool>? _uhfConnectBusy;
+
+  static Future<bool> ensureUhfConnected({String? power, String? area}) async {
+    // Tek seferde bir bağlantı denemesi (idempotent)
+    if (_uhfConnectBusy != null) return _uhfConnectBusy!.future;
+    _uhfConnectBusy = Completer<bool>();
+    try {
+      // 0) Barkod döngüsünü durdur (varsa) – çakışmayı önler
+      try {
+        await disposeBarcode();
+      } catch (_) {}
+
+      // 1) Zaten bağlı mı?
+      final already = await isConnected;
+      if (already == true) {
+        if (power != null) await setPowerLevel(power);
+        if (area != null) await setWorkArea(area);
+        debugPrint('RFID ensureUhfConnected => true');
+        _uhfConnectBusy!.complete(true);
+        return true;
+      }
+
+      // 2) Bağlan
+      final ok = await connect;
+      if (ok == true) {
+        if (power != null) await setPowerLevel(power);
+        if (area != null) await setWorkArea(area);
+        debugPrint('RFID ensureUhfConnected => true');
+        _uhfConnectBusy!.complete(true);
+        return true;
+      } else {
+        debugPrint('RFID ensureUhfConnected => false');
+        _uhfConnectBusy!.complete(false);
+        return false;
+      }
+    } finally {
+      _uhfConnectBusy = null;
+    }
+  }
+
   static Future<bool?> get startSingle async {
     return _channel.invokeMethod('startSingle');
   }

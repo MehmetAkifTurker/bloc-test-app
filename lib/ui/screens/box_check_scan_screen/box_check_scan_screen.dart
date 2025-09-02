@@ -1394,7 +1394,18 @@ class _BoxCheckScanBodyState extends State<_BoxCheckScanBody> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _checkIfConnected());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _ensureUhf());
+  }
+
+  Future<void> _ensureUhf() async {
+    log("Ensuring UHF connection (BoxCheckScanScreen)...");
+    final ok = await RfidC72Plugin.ensureUhfConnected(); // sadece bağlantı
+    log(ok ? "UHF connected" : "UHF connect FAILED");
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('RFID bağlanmadı (UHF).')),
+      );
+    }
   }
 
   Future<void> _checkIfConnected() async {

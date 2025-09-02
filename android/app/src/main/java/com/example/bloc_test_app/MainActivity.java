@@ -122,4 +122,29 @@ public class MainActivity extends FlutterActivity {
         }
         return super.onKeyUp(keyCode, event);
     }
+
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        final int code = event.getKeyCode();
+        final int action = event.getAction();
+
+        // Geçici: tüm tuşları görmek için açın
+        // Log.v("MainActivity", "dispatch: code=" + code + " action=" + action);
+
+        if (isScanKey(code)) {
+            if (action == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) {
+                Log.d("MainActivity", "Key down: " + code);
+                if (keyChannel != null)
+                    keyChannel.invokeMethod("onKeyDown", code);
+                return true; // olayı tükettik
+            } else if (action == KeyEvent.ACTION_UP) {
+                Log.d("MainActivity", "Key up: " + code);
+                if (keyChannel != null)
+                    keyChannel.invokeMethod("onKeyUp", code);
+                return true; // olayı tükettik
+            }
+        }
+        return super.dispatchKeyEvent(event);
+    }
+
 }
