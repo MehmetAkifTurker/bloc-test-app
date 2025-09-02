@@ -287,19 +287,24 @@ class _QrScanScreenState extends State<QrScanScreen> {
   void initState() {
     super.initState();
     RfidC72Plugin.initializeKeyEventHandler(context);
-    _initBarcode();
 
-    // Tetikten gelen decode’ları UI’ya yaz
+    // Key handler’ı global ve 1 kez kur
+    RfidC72Plugin.ensureKeyHandler();
+
+    // 2D barkod modülünü aç (buton olmadan tetik de çalışabilsin)
+    RfidC72Plugin.connectBarcode.then((ok) {
+      debugPrint('QR: connectBarcode => $ok');
+      if (mounted) setState(() => _connected = ok ?? false);
+    });
+
+    // Tetik + dahili loop’tan gelen sonuçları dinle
     _sub = RfidC72Plugin.barcodeStream.listen((code) {
-      if (!mounted || code.isEmpty) return;
-      debugPrint('RFID stream code: "$code"');
+      debugPrint('QR decode (stream): "$code"');
+      if (!mounted) return;
       setState(() {
         _last = code;
         _history.insert(0, code);
       });
-      if (!_continuous) {
-        _stop(); // tek sefer modunda durdur
-      }
     });
   }
 
@@ -326,14 +331,8 @@ class _QrScanScreenState extends State<QrScanScreen> {
 
   Future<void> _start() async {
     if (_scanning) return;
-
-    // emin olmak için tekrar dene
-    if (!_connected) await _initBarcode();
-
     final ok = await RfidC72Plugin.scanBarcode ?? false;
-    _log('scanBarcode() => $ok');
     if (!ok) return;
-
     setState(() => _scanning = true);
 
     _pollTimer?.cancel();
@@ -341,24 +340,14 @@ class _QrScanScreenState extends State<QrScanScreen> {
       try {
         final s = (await RfidC72Plugin.readBarcode) ?? '';
         if (s.isEmpty || s == 'FAIL' || s == _last) return;
-
-        _log('decode: "$s"');
-
-        HapticFeedback.mediumImpact();
-        await SystemSound.play(SystemSoundType.click);
-
+        debugPrint('QR decode (poll): "$s"'); // butonla manuel mod
         if (!mounted) return;
         setState(() {
           _last = s;
           _history.insert(0, s);
         });
-
-        if (!_continuous) {
-          await _stop();
-        }
-      } catch (e) {
-        _log('poll error: $e');
-      }
+        if (!_continuous) await _stop();
+      } catch (_) {}
     });
   }
 
@@ -368,13 +357,12 @@ class _QrScanScreenState extends State<QrScanScreen> {
     await RfidC72Plugin.stopScan;
     if (!mounted) return;
     setState(() => _scanning = false);
-    _log('stopScan() called');
   }
 
   @override
   void dispose() {
-    _sub.cancel(); // unutma
     _pollTimer?.cancel();
+    _sub.cancel();
     RfidC72Plugin.disposeBarcode();
     super.dispose();
   }

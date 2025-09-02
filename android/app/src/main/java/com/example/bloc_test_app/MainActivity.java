@@ -34,83 +34,91 @@
 //         return super.onKeyUp(keyCode, event);
 //     }
 // }
+// package com.example.water_boiler_rfid_labeler;
+
+// import android.os.Bundle;
+// import android.util.Log;
+// import android.view.KeyEvent;
+// import io.flutter.embedding.android.FlutterActivity;
+// import io.flutter.plugin.common.MethodChannel;
+
+// public class MainActivity extends FlutterActivity {
+// private static final String CHANNEL =
+// "com.example.my_rfid_plugin/key_events";
+// private MethodChannel keyChannel;
+
+// @Override
+// protected void onCreate(Bundle savedInstanceState) {
+// super.onCreate(savedInstanceState);
+// keyChannel = new MethodChannel(
+// getFlutterEngine().getDartExecutor().getBinaryMessenger(),
+// CHANNEL);
+// }
+
+// private boolean isScanKey(int code) {
+// return code == 131 || code == 132 || code == 293 || code == 294;
+// }
+
+// @Override
+// public boolean onKeyDown(int keyCode, KeyEvent event) {
+// if (isScanKey(keyCode) && event.getRepeatCount() == 0) {
+// Log.d("MainActivity", "Key down: " + keyCode);
+// keyChannel.invokeMethod("onKeyDown", keyCode);
+// return true; // olayı tükettik
+// }
+// return super.onKeyDown(keyCode, event);
+// }
+
+// @Override
+// public boolean onKeyUp(int keyCode, KeyEvent event) {
+// if (isScanKey(keyCode)) {
+// Log.d("MainActivity", "Key up: " + keyCode);
+// keyChannel.invokeMethod("onKeyUp", keyCode);
+// return true; // olayı tükettik
+// }
+// return super.onKeyUp(keyCode, event);
+// }
+// }
 package com.example.water_boiler_rfid_labeler;
 
+import androidx.annotation.NonNull;
 import android.util.Log;
 import android.view.KeyEvent;
-
-import androidx.annotation.NonNull;
-
 import io.flutter.embedding.android.FlutterActivity;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.plugin.common.MethodChannel;
 
 public class MainActivity extends FlutterActivity {
-    private static final String TAG = "MainActivity";
-    private static final String KEY_EVENT_CHANNEL = "com.example.my_rfid_plugin/key_events";
-
-    private MethodChannel keyEventChannel;
-
-    // C66 tetik tuşları (çoğu model: 293/294; bazılarında 131/132)
-    private static final int[] SCAN_KEYS = new int[] { 131, 132, 293, 294 };
-
-    private boolean isScanKey(int code) {
-        for (int k : SCAN_KEYS)
-            if (k == code)
-                return true;
-        return false;
-    }
+    private static final String CHANNEL = "com.example.my_rfid_plugin/key_events";
+    private MethodChannel keyChannel;
 
     @Override
     public void configureFlutterEngine(@NonNull FlutterEngine flutterEngine) {
         super.configureFlutterEngine(flutterEngine);
-        Log.d(TAG, "configureFlutterEngine()");
-        keyEventChannel = new MethodChannel(
-                flutterEngine.getDartExecutor().getBinaryMessenger(),
-                KEY_EVENT_CHANNEL);
+        keyChannel = new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), CHANNEL);
     }
 
-    @Override
-    public boolean dispatchKeyEvent(KeyEvent event) {
-        int code = event.getKeyCode();
-        int action = event.getAction();
-        Log.v(TAG, "dispatchKeyEvent code=" + code + " action=" + action);
-
-        if (isScanKey(code)) {
-            if (action == KeyEvent.ACTION_DOWN) {
-                Log.d(TAG, "Key down: " + code);
-                if (keyEventChannel != null)
-                    keyEventChannel.invokeMethod("onKeyDown", code);
-                return true; // olayı tükettik
-            } else if (action == KeyEvent.ACTION_UP) {
-                Log.d(TAG, "Key up  : " + code);
-                if (keyEventChannel != null)
-                    keyEventChannel.invokeMethod("onKeyUp", code);
-                return true; // olayı tükettik
-            }
-        }
-        return super.dispatchKeyEvent(event);
+    private boolean isScanKey(int code) {
+        // C66: 293/294 (soldaki/sağdaki), bazı cihazlarda 131/132
+        return code == 293 || code == 294 || code == 131 || code == 132;
     }
 
-    // Emniyet için fallback (bazı cihazlarda dispatch yerine bunlar tetiklenir)
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        Log.v(TAG, "onKeyDown fallback code=" + keyCode);
-        if (isScanKey(keyCode)) {
-            if (keyEventChannel != null)
-                keyEventChannel.invokeMethod("onKeyDown", keyCode);
-            return true;
+        Log.d("MainActivity", "Key down: " + keyCode);
+        if (isScanKey(keyCode) && keyChannel != null) {
+            keyChannel.invokeMethod("onKeyDown", keyCode);
+            return true; // olayı tükettik
         }
         return super.onKeyDown(keyCode, event);
     }
 
     @Override
     public boolean onKeyUp(int keyCode, KeyEvent event) {
-        Log.v(TAG, "onKeyUp   fallback code=" + keyCode);
-        if (isScanKey(keyCode)) {
-            if (keyEventChannel != null)
-                keyEventChannel.invokeMethod("onKeyUp", keyCode);
-            return true;
+        Log.d("MainActivity", "Key up: " + keyCode);
+        if (isScanKey(keyCode) && keyChannel != null) {
+            keyChannel.invokeMethod("onKeyUp", keyCode);
+            return true; // olayı tükettik
         }
         return super.onKeyUp(keyCode, event);
     }

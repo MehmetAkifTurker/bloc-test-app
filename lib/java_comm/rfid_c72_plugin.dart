@@ -19,9 +19,7 @@ class RfidC72Plugin {
   static bool _loopRunning = false; // loop açık mı?
   static bool _innerScanActive = false; // tek tarama in-flight mi?
   static const _scanKeys = {131, 132, 293, 294};
-
-  static bool _isScanKey(int code) =>
-      const {131, 132, 293, 294}.contains(code) || (code >= 290 && code <= 299);
+  static bool _isScanKey(int code) => const {131, 132, 293, 294}.contains(code);
 
   // --- DEBUG STREAM ---
   static final _debugCtrl = StreamController<String>.broadcast();
@@ -190,7 +188,7 @@ class RfidC72Plugin {
       case 'onKeyDown':
         {
           final int keyCode = (call.arguments as int?) ?? -1;
-          debugPrint('RFID onKeyDown key=$keyCode'); // <- konsola düşsün
+          debugPrint('RFID onKeyDown key=$keyCode');
           if (!_isScanKey(keyCode)) return;
           _holdScan = true;
           await _startBarcodeLoop();
@@ -199,7 +197,7 @@ class RfidC72Plugin {
       case 'onKeyUp':
         {
           final int keyCode = (call.arguments as int?) ?? -1;
-          debugPrint('RFID onKeyUp   key=$keyCode'); // <- konsola düşsün
+          debugPrint('RFID onKeyUp   key=$keyCode');
           if (!_isScanKey(keyCode)) return;
           await _stopBarcodeLoop();
           break;
@@ -364,5 +362,35 @@ class RfidC72Plugin {
     await _stopBarcodeLoop();
     await closeScan;
     _barcodeConnected = false;
+  }
+
+  static Future<void> _handleKeyEventNoCtx(MethodCall call) async {
+    switch (call.method) {
+      case 'onKeyDown':
+        {
+          final int keyCode = (call.arguments as int?) ?? -1;
+          debugPrint('RFID onKeyDown key=$keyCode');
+          if (!_isScanKey(keyCode)) return;
+          _holdScan = true;
+          await _startBarcodeLoop();
+          break;
+        }
+      case 'onKeyUp':
+        {
+          final int keyCode = (call.arguments as int?) ?? -1;
+          debugPrint('RFID onKeyUp   key=$keyCode');
+          if (!_isScanKey(keyCode)) return;
+          await _stopBarcodeLoop();
+          break;
+        }
+    }
+  }
+
+  static bool _handlerRegistered = false;
+  static Future<void> ensureKeyHandler() async {
+    if (_handlerRegistered) return;
+    _log('Key handler attached (global)');
+    _keyEventChannel.setMethodCallHandler(_handleKeyEventNoCtx);
+    _handlerRegistered = true;
   }
 }
