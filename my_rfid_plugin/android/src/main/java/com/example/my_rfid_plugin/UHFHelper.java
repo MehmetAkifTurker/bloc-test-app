@@ -1604,27 +1604,36 @@ public class UHFHelper {
             mReader = RFIDWithUHFUART.getInstance();
         } catch (Exception ex) {
             Log.e(TAG, "RFIDWithUHFUART getInstance failed", ex);
-            if (uhfListener != null) {
+            if (uhfListener != null)
                 uhfListener.onConnect(false, 0);
-            }
             return false;
         }
-        if (mReader != null) {
-            isConnect = mReader.init(context);
-            if (uhfListener != null) {
-                uhfListener.onConnect(isConnect, 0);
-            }
-            return isConnect;
+
+        if (mReader == null) {
+            if (uhfListener != null)
+                uhfListener.onConnect(false, 0);
+            return false;
         }
-        if (uhfListener != null) {
-            uhfListener.onConnect(false, 0);
-        }
+
+        isConnect = mReader.init(context);
+        if (uhfListener != null)
+            uhfListener.onConnect(isConnect, 0);
+
         if (isConnect) {
-            try { mReader.setEPCMode(); } catch (Exception ignore) {}
-            try { mReader.setTagFocus(true); } catch (Exception ignore) {}
-            try { mReader.setFastID(true); } catch (Exception ignore) {}
+            try {
+                mReader.setEPCMode();
+            } catch (Exception ignore) {
+            }
+            try {
+                mReader.setTagFocus(true);
+            } catch (Exception ignore) {
+            }
+            try {
+                mReader.setFastID(true);
+            } catch (Exception ignore) {
+            }
         }
-        return false;
+        return isConnect;
     }
 
     public void close() {
@@ -1656,9 +1665,20 @@ public class UHFHelper {
             barcodeDecoder = BarcodeFactory.getInstance().getBarcodeDecoder();
         }
         if (barcodeDecoder != null) {
+            Log.d(TAG, "Barcode open()");
             barcodeDecoder.open(context);
+            barcodeDecoder.setDecodeCallback(entity -> {
+                if (entity.getResultCode() == BarcodeDecoder.DECODE_SUCCESS) {
+                    scannedBarcode = entity.getBarcodeData();
+                    Log.d(TAG, "Decode SUCCESS: " + scannedBarcode);
+                } else {
+                    scannedBarcode = "";
+                    Log.d(TAG, "Decode FAIL rc=" + entity.getResultCode());
+                }
+            });
             return true;
         }
+        Log.e(TAG, "Barcode decoder is null");
         return false;
     }
 

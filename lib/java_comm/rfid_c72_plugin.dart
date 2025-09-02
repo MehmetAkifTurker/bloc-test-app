@@ -10,6 +10,30 @@ class RfidC72Plugin {
   static const MethodChannel _channel = MethodChannel('rfid_c72_plugin');
   static const MethodChannel _keyEventChannel =
       MethodChannel('com.example.my_rfid_plugin/key_events');
+  static Timer? _barcodeTimer;
+  static bool _barcodeConnected = false;
+  static bool _barcodeScanning = false;
+  static final _barcodeCtrl = StreamController<String>.broadcast();
+  static Stream<String> get barcodeStream => _barcodeCtrl.stream;
+  static bool _holdScan = false; // tuş basılı mı?
+  static bool _loopRunning = false; // loop açık mı?
+  static bool _innerScanActive = false; // tek tarama in-flight mi?
+  static const _scanKeys = {131, 132, 293, 294};
+
+  static bool _isScanKey(int code) =>
+      const {131, 132, 293, 294}.contains(code) || (code >= 290 && code <= 299);
+
+  // --- DEBUG STREAM ---
+  static final _debugCtrl = StreamController<String>.broadcast();
+  static Stream<String> get debugStream => _debugCtrl.stream;
+  static bool verbose = true;
+
+  static void _log(String msg) {
+    final ts = DateTime.now().toIso8601String().substring(11, 23);
+    final line = 'RFID[$ts] $msg';
+    debugPrint(line);
+    if (!_debugCtrl.isClosed) _debugCtrl.add(line);
+  }
 
   static Future<String?> get platformVersion async {
     final String? version = await _channel.invokeMethod('getPlatformVersion');
@@ -135,6 +159,7 @@ class RfidC72Plugin {
 
   // Key Event Handling
   static void initializeKeyEventHandler(BuildContext context) {
+    _log('Key handler attached');
     _keyEventChannel
         .setMethodCallHandler((call) => _handleKeyEvent(call, context));
   }
@@ -161,26 +186,24 @@ class RfidC72Plugin {
 
   static Future<void> _handleKeyEvent(
       MethodCall call, BuildContext context) async {
-    log('Handle trigger event');
-    // final dbState = context.read<DBTagBloc>().state;
     switch (call.method) {
       case 'onKeyDown':
-        int keyCode = call.arguments;
-        log('Trigger pressed: $keyCode');
-        // When trigger is pressed, start scanning (for page index 1, i.e., Box Check)
-        // if (dbState is DBTagLoaded && pageIndex == 1) {
-        //   // Dispatch the start scanning event – ensure your BoxCheckBloc listens for this
-        //   context.read<BoxCheckBloc>().add(BoxCheckStart(dbState.tags));
-        // }
-        break;
+        {
+          final int keyCode = (call.arguments as int?) ?? -1;
+          debugPrint('RFID onKeyDown key=$keyCode'); // <- konsola düşsün
+          if (!_isScanKey(keyCode)) return;
+          _holdScan = true;
+          await _startBarcodeLoop();
+          break;
+        }
       case 'onKeyUp':
-        int keyCode = call.arguments;
-        log('Trigger released: $keyCode');
-        // When trigger is released, stop scanning
-        // if (dbState is DBTagLoaded && pageIndex == 1) {
-        //   context.read<BoxCheckBloc>().add(BoxCheckStop());
-        // }
-        break;
+        {
+          final int keyCode = (call.arguments as int?) ?? -1;
+          debugPrint('RFID onKeyUp   key=$keyCode'); // <- konsola düşsün
+          if (!_isScanKey(keyCode)) return;
+          await _stopBarcodeLoop();
+          break;
+        }
       default:
         throw MissingPluginException('Not implemented: ${call.method}');
     }
@@ -261,5 +284,85 @@ class RfidC72Plugin {
         await _channel.invokeMethod('readUserFieldsForEpc', {'epc': epcHex});
     if (json.isEmpty) return null;
     return Map<String, dynamic>.from(jsonDecode(json));
+  }
+
+  static Future<void> _ensureBarcodeOpened() async {
+    if (!_barcodeConnected) {
+      _log('connectBarcode()…');
+      _barcodeConnected = (await connectBarcode) ?? false;
+      _log('connectBarcode => ${_barcodeConnected ? "OK" : "FAIL"}');
+    }
+  }
+
+  static Future<String?> _waitForDecode(
+      {Duration timeout = const Duration(milliseconds: 500)}) async {
+    final sw = Stopwatch()..start();
+    int polls = 0;
+    String? last;
+    while (sw.elapsed < timeout) {
+      final s = await RfidC72Plugin.readBarcode;
+      if (s != null && s.isNotEmpty && s != 'FAIL') {
+        _log('decode OK in ${sw.elapsedMilliseconds}ms (polls=$polls): "$s"');
+        return s;
+      }
+      last = s;
+      polls++;
+      await Future.delayed(const Duration(milliseconds: 30));
+    }
+    _log(
+        'decode TIMEOUT after ${sw.elapsedMilliseconds}ms (polls=$polls, last="$last")');
+    return null;
+  }
+
+// Tetik basılınca çağrılacak
+  static Future<void> _startBarcodeLoop() async {
+    if (_loopRunning) {
+      _log('loop already running');
+      return;
+    }
+    _loopRunning = true;
+
+    await _ensureBarcodeOpened();
+    _log('startBarcodeLoop hold=$_holdScan opened=$_barcodeConnected');
+
+    while (_holdScan && _barcodeConnected) {
+      if (_innerScanActive) {
+        await Future.delayed(const Duration(milliseconds: 20));
+        continue;
+      }
+
+      _innerScanActive = true;
+      try {
+        _log('scanBarcode()');
+        await RfidC72Plugin.scanBarcode;
+        final code = await _waitForDecode();
+        if (code != null) {
+          _barcodeCtrl.add(code);
+          await RfidC72Plugin.playSound;
+        }
+      } finally {
+        _log('stopScan()');
+        await RfidC72Plugin.stopScan;
+        _innerScanActive = false;
+      }
+
+      if (_holdScan) await Future.delayed(const Duration(milliseconds: 40));
+    }
+
+    _log('exit loop hold=$_holdScan');
+    _loopRunning = false;
+  }
+
+  static Future<void> _stopBarcodeLoop() async {
+    _log('stopBarcodeLoop() called');
+    _holdScan = false;
+    await RfidC72Plugin.stopScan;
+  }
+
+// Ekrandan çıkarken çağırmak için
+  static Future<void> disposeBarcode() async {
+    await _stopBarcodeLoop();
+    await closeScan;
+    _barcodeConnected = false;
   }
 }

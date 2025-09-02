@@ -1,6 +1,7 @@
 import 'package:water_boiler_rfid_labeler/ui/screens/box_check_scan_screen/box_check_scan_screen.dart';
 import 'package:water_boiler_rfid_labeler/ui/screens/main_menu/main_menu.dart';
 import 'package:flutter/material.dart';
+import 'package:water_boiler_rfid_labeler/ui/screens/qr_scan_screen/qr_scan_screen.dart';
 
 import '../screens/tag_write_screen/tag_write_screen.dart';
 
@@ -42,6 +43,8 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const BoxCheckScanScreen());
       case '/write':
         return MaterialPageRoute(builder: (_) => const TagWriteScreen());
+      case '/qr':
+        return MaterialPageRoute(builder: (_) => const QrScanScreen());
       default:
         return MaterialPageRoute(builder: (_) => const MainMenu());
     }
@@ -60,4 +63,5 @@ List<String> pageNames = [
   '/',
   '/read',
   '/write',
+  '/qr',
 ];
