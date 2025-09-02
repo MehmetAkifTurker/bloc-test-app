@@ -155,7 +155,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:water_boiler_rfid_labeler/java_comm/rfid_c72_plugin.dart';
 import 'package:water_boiler_rfid_labeler/ui/router/app_bar.dart';
-import 'package:water_boiler_rfid_labeler/ui/router/bottom_navigation.dart';
 import 'package:water_boiler_rfid_labeler/ui/screens/tag_write_screen/create_chip_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

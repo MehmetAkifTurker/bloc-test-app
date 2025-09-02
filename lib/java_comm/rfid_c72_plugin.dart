@@ -1,24 +1,19 @@
 import 'dart:async';
-import 'dart:developer';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 class RfidC72Plugin {
   static const MethodChannel _channel = MethodChannel('rfid_c72_plugin');
   static const MethodChannel _keyEventChannel =
       MethodChannel('com.example.my_rfid_plugin/key_events');
-  static Timer? _barcodeTimer;
   static bool _barcodeConnected = false;
-  static bool _barcodeScanning = false;
   static final _barcodeCtrl = StreamController<String>.broadcast();
   static Stream<String> get barcodeStream => _barcodeCtrl.stream;
   static bool _holdScan = false; // tuş basılı mı?
   static bool _loopRunning = false; // loop açık mı?
   static bool _innerScanActive = false; // tek tarama in-flight mi?
-  static const _scanKeys = {131, 132, 293, 294};
   static bool _isScanKey(int code) => const {131, 132, 293, 294}.contains(code);
 
   // --- DEBUG STREAM ---

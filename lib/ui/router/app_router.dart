@@ -59,9 +59,4 @@ class AppRouter {
       );
 }
 
-List<String> pageNames = [
-  '/',
-  '/read',
-  '/write',
-  '/qr',
-];
+List<String> pageNames = ['/', '/read', '/write', '/qr'];

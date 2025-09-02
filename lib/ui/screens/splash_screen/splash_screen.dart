@@ -1,4 +1,3 @@
-import 'package:water_boiler_rfid_labeler/data/models/variables.dart';
 import 'package:flutter/material.dart';
 
 class SplashScreen extends StatelessWidget {
